@@ -1,1 +1,70 @@
-<h1>Calculadora de Tasas</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<title>Calculadora de Tasas</title>
+</head>
+<body>
+	<h1>Calculadora de Tasas</h1>
+
+	<form method="post">
+		{% csrf_token %}
+		<div>
+			<label>Porcentaje:</label>
+			<input type="text" name="porcentaje" required />
+		</div>
+
+		<div>
+			<label>Periodo:</label>
+			<select name="periodo" required>
+				<option value="">--Seleccione--</option>
+				{% for p in periodos %}
+					<option value="{{ p.id }}">{{ p.nombre }} (nper={{ p.nper }})</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<div>
+			<label>Cálculo:</label>
+			<select name="calculo" required>
+				<option value="">--Seleccione--</option>
+				{% for c in calculos %}
+					<option value="{{ c.id }}">{{ c.nombre }}</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<div>
+			<label>Tipo:</label>
+			<select name="tipo" required>
+				<option value="">--Seleccione--</option>
+				{% for t in tipos %}
+					<option value="{{ t.id }}">{{ t.nombre }}</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<div>
+			<label>Transformación:</label>
+			<select name="transformacion" required>
+				<option value="">--Seleccione--</option>
+				{% for tr in transformaciones %}
+					<option value="{{ tr.id }}">{{ tr.nombre }}</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<div>
+			<button type="submit">Calcular</button>
+		</div>
+	</form>
+
+	{% if error %}
+		<p style="color:red;">Error: {{ error }}</p>
+	{% endif %}
+
+	{% if result is not None %}
+		<h2>Resultado: {{ result }}</h2>
+	{% endif %}
+</body>
+</html>

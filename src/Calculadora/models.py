@@ -13,7 +13,7 @@ class Calculo(models.Model):
         return self.nombre
     
 class Tipo(models.Model):
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100) #vencido, anticipado 
     def __str__(self):
         return self.nombre
     
@@ -21,3 +21,8 @@ class Transformacion(models.Model):#lo mismo que calculo pero es al que se trans
     nombre = models.CharField(max_length=100)
     def __str__(self):
         return self.nombre
+
+class Porcentaje(models.Model):
+    valor = models.FloatField()
+    def __str__(self):
+        return str(self.valor)
