@@ -1,0 +1,54 @@
+# ====================
+# Python
+# ====================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*$py.class
+
+# Archivos de Cython
+*.pyd
+*.pyo
+
+# ====================
+# Entornos virtuales
+# ====================
+.venv/
+venv/
+env/
+ENV/
+*.env
+*.venv
+
+# ====================
+# Django
+# ====================
+db.sqlite3
+*.log
+*.pot
+*.pyc
+local_settings.py
+media/
+staticfiles/
+logs/
+
+# ====================
+# Migraciones (opcional: si las quieres ignorar en desarrollo)
+# ====================
+# */migrations/
+# !*/migrations/__init__.py
+
+# ====================
+# IDEs y editores
+# ====================
+.vscode/
+.idea/
+*.iml
+
+# ====================
+# Sistema operativo
+# ====================
+.DS_Store
+Thumbs.db
