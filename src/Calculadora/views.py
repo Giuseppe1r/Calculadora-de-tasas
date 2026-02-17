@@ -23,26 +23,37 @@ def calculadora(request):
             calculo = Calculo.objects.get(id=calculo_id) if calculo_id else None
             tipo = Tipo.objects.get(id=tipo_id) if tipo_id else None
             transformacion = Transformacion.objects.get(id=transformacion_id) if transformacion_id else None
-
-            # Condición pedida: cualquier periodo y calculo es Nominal,
-            # tipo es vencida, transformacion es efectiva -> aplicar fórmula
-            if (
-                periodo
-                and calculo
-                and tipo
-                and transformacion
-                and calculo.nombre.lower() == 'nominal'
-                and tipo.nombre.lower().startswith('venc')
-                and transformacion.nombre.lower() == 'efectiva'
-            ):
-                nper = periodo.nper
-                if porcentaje == 0:
-                    error = 'El porcentaje no puede ser 0.'
+            # Si el cálculo seleccionado es 'efectiva', convertir la tasa efectiva
+            # a la tasa por periodo: ((1 + efectiva)^(1/nper)) - 1
+            if calculo and calculo.nombre.lower() == 'efectiva':
+                if not periodo:
+                    error = 'Seleccione un periodo para calcular desde efectiva.'
                 else:
-                    # Aplicar fórmula: ((1 + nper/porcentaje) ** nper) - 1
-                    result = ((1 + ((porcentaje /100 ) / nper)) ** nper) - 1
+                    nper = periodo.nper
+                    if porcentaje == 0:
+                        error = 'El porcentaje no puede ser 0.'
+                    else:
+                        # porcentaje viene en % -> convertir a decimal
+                        efectiva = porcentaje / 100.0
+                        result = (1 + efectiva) ** (1.0 / nper) - 1
             else:
-                result = None
+                # Comportamiento previo: ejemplo de conversión nominal -> efectiva
+                if (
+                    periodo
+                    and calculo
+                    and tipo
+                    and transformacion
+                    and calculo.nombre.lower() == 'nominal'
+                    and tipo.nombre.lower().startswith('venc')
+                    and transformacion.nombre.lower() == 'efectiva'
+                ):
+                    nper = periodo.nper
+                    if porcentaje == 0:
+                        error = 'El porcentaje no puede ser 0.'
+                    else:
+                        result = ((1 + ((porcentaje / 100.0) / nper)) ** nper) - 1
+                else:
+                    result = None
         except Exception as e:
             error = str(e)
 

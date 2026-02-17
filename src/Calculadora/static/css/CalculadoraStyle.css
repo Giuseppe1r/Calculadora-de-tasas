@@ -1,0 +1,76 @@
+/* Estilos base para la Calculadora de Tasas */
+:root{
+	--bg:#f5f7fb;
+	--card:#ffffff;
+	--accent:#2b6cb0;
+	--muted:#6b7280;
+	--danger:#e53e3e;
+}
+*{box-sizing:border-box}
+body{
+	margin:0;
+	font-family:Segoe UI, Roboto, Arial, sans-serif;
+	background:linear-gradient(180deg,var(--bg),#eef2f6);
+	color:#1f2937;
+	-webkit-font-smoothing:antialiased;
+}
+.container{
+	max-width:760px;
+	margin:40px auto;
+	padding:28px;
+	background:var(--card);
+	border-radius:10px;
+	box-shadow:0 6px 20px rgba(31,41,55,0.08);
+}
+.site-title{
+	margin:0 0 18px 0;
+	font-size:1.6rem;
+	color:var(--accent);
+	text-align:center;
+}
+.calc-form{
+	display:grid;
+	gap:12px;
+}
+.form-group{
+	display:flex;
+	gap:12px;
+	align-items:center;
+}
+.form-label{
+	width:34%;
+	font-weight:600;
+	color:var(--muted);
+}
+.form-input,.form-select{
+	width:66%;
+	padding:10px 12px;
+	border:1px solid #e6e9ef;
+	border-radius:6px;
+	background:#fff;
+	font-size:1rem;
+}
+.form-select{appearance:none}
+.actions{justify-content:flex-end}
+.btn{
+	background:var(--accent);
+	color:white;
+	border:none;
+	padding:10px 18px;
+	border-radius:8px;
+	cursor:pointer;
+	font-weight:600;
+}
+.btn:hover{filter:brightness(.95)}
+.error{color:var(--danger);margin-top:12px;font-weight:600}
+.result{margin-top:14px;color:#0f172a}
+
+@media (max-width:640px){
+	.form-group{flex-direction:column;align-items:stretch}
+	.form-label{width:100%}
+	.form-input,.form-select{width:100%}
+	.actions{justify-content:center}
+}
+
+/* Pequeños detalles visuales */
+.form-input:focus,.form-select:focus{outline:none;box-shadow:0 0 0 3px rgba(43,108,176,0.12);border-color:var(--accent)}

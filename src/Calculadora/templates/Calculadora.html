@@ -3,68 +3,137 @@
 <head>
 	<meta charset="utf-8">
 	<title>Calculadora de Tasas</title>
+	{% load static %}
+	<link rel="stylesheet" href="{% static 'css/CalculadoraStyle.css' %}">
 </head>
 <body>
-	<h1>Calculadora de Tasas</h1>
+	<div class="container">
+		<h1 class="site-title">Calculadora de Tasas</h1>
 
-	<form method="post">
+		<form method="post" class="calc-form">
 		{% csrf_token %}
-		<div>
-			<label>Porcentaje:</label>
-			<input type="text" name="porcentaje" required />
-		</div>
+			<div class="form-group">
+				<label class="form-label">Porcentaje:</label>
+				<input class="form-input" type="text" name="porcentaje" required />
+			</div>
 
-		<div>
-			<label>Periodo:</label>
-			<select name="periodo" required>
-				<option value="">--Seleccione--</option>
-				{% for p in periodos %}
-					<option value="{{ p.id }}">{{ p.nombre }} (nper={{ p.nper }})</option>
-				{% endfor %}
-			</select>
-		</div>
+			<div class="form-group">
+				<label class="form-label">De:</label>
+				<select id="calculo-select" class="form-select" name="calculo" required>
+					<option value="">--Seleccione--</option>
+					{% for c in calculos %}
+						<option value="{{ c.id }}">{{ c.nombre }}</option>
+					{% endfor %}
+				</select>
+			</div>
 
-		<div>
-			<label>Cálculo:</label>
-			<select name="calculo" required>
-				<option value="">--Seleccione--</option>
-				{% for c in calculos %}
-					<option value="{{ c.id }}">{{ c.nombre }}</option>
-				{% endfor %}
-			</select>
-		</div>
+			<div id="dynamic-fields" style="display:none">
+				<div class="form-group">
+					<label class="form-label">A:</label>
+					<select id="transformacion-select" class="form-select" name="transformacion">
+						<option value="">--Seleccione--</option>
+						{% for tr in transformaciones %}
+							<option value="{{ tr.id }}">{{ tr.nombre }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
 
-		<div>
-			<label>Tipo:</label>
-			<select name="tipo" required>
-				<option value="">--Seleccione--</option>
-				{% for t in tipos %}
-					<option value="{{ t.id }}">{{ t.nombre }}</option>
-				{% endfor %}
-			</select>
-		</div>
+				<div class="form-group">
+					<label class="form-label">Tipo:</label>
+					<select id="tipo-select" class="form-select" name="tipo">
+						<option value="">--Seleccione--</option>
+						{% for t in tipos %}
+							<option value="{{ t.id }}">{{ t.nombre }}</option>
+						{% endfor %}
+					</select>
+				</div>
 
-		<div>
-			<label>Transformación:</label>
-			<select name="transformacion" required>
-				<option value="">--Seleccione--</option>
-				{% for tr in transformaciones %}
-					<option value="{{ tr.id }}">{{ tr.nombre }}</option>
-				{% endfor %}
-			</select>
-		</div>
 
-		<div>
-			<button type="submit">Calcular</button>
-		</div>
+							<div class="form-group">
+					<label class="form-label">Periodo:</label>
+					<select id="periodo-select" class="form-select" name="periodo">
+						<option value="">--Seleccione--</option>
+						{% for p in periodos %}
+							<option value="{{ p.id }}">{{ p.nombre }} (nper={{ p.nper }})</option>
+						{% endfor %}
+					</select>
+				</div>
+			
+
+
+			<div class="form-group actions">
+				<button class="btn" type="submit">Calcular</button>
+			</div>
 	</form>
 
-	{% if error %}
-		<p style="color:red;">Error: {{ error }}</p>
-	{% endif %}
+		<script>
+		// Mostrar/ocultar campos dinámicos según el cálculo seleccionado
+		(function(){
+			const calculoSelect = document.getElementById('calculo-select');
+			const dynamic = document.getElementById('dynamic-fields');
+			const periodo = document.getElementById('periodo-select');
+			const tipo = document.getElementById('tipo-select');
+			const transformacion = document.getElementById('transformacion-select');
 
-	{% if result is not None %}
-		<h2>Resultado: {{ result }}</h2>
-	{% endif %}
+			function setRequiredPeriodTipo(show){
+				if(show){
+					periodo.setAttribute('required','required');
+					tipo.setAttribute('required','required');
+				}else{
+					periodo.removeAttribute('required');
+					tipo.removeAttribute('required');
+				}
+			}
+
+			function updateVisibility(){
+				if(!calculoSelect.value){
+					dynamic.style.display = 'none';
+					setRequiredPeriodTipo(false);
+					transformacion.removeAttribute('required');
+					return;
+				}
+
+				dynamic.style.display = '';
+				transformacion.setAttribute('required','required');
+
+				const calcTxt = calculoSelect.options[calculoSelect.selectedIndex].text.toLowerCase();
+				const transTxt = transformacion.value && transformacion.options[transformacion.selectedIndex]
+					? transformacion.options[transformacion.selectedIndex].text.toLowerCase()
+					: '';
+
+				// Mostrar `Periodo` y `Tipo` siempre que cualquiera de los lados
+				// (cálculo o transformación) incluya 'nominal', o cuando el cálculo
+				// sea 'efectiva' (para permitir convertir efectiva -> nominal)
+				const showPeriodTipo = calcTxt.includes('nominal') || calcTxt.includes('efectiva') || transTxt.includes('nominal');
+
+				const periodoGroup = periodo.closest('.form-group');
+				const tipoGroup = tipo.closest('.form-group');
+				if(showPeriodTipo){
+					periodoGroup.style.display = '';
+					tipoGroup.style.display = '';
+					setRequiredPeriodTipo(true);
+				}else{
+					periodoGroup.style.display = 'none';
+					tipoGroup.style.display = 'none';
+					setRequiredPeriodTipo(false);
+				}
+			}
+
+			calculoSelect.addEventListener('change', updateVisibility);
+			transformacion.addEventListener('change', updateVisibility);
+			// Inicializar al cargar
+			document.addEventListener('DOMContentLoaded', updateVisibility);
+		})();
+		</script>
+
+		{% if error %}
+			<p class="error">Error: {{ error }}</p>
+		{% endif %}
+
+		{% if result is not None %}
+			<h2 class="result">Resultado: {{ result }}</h2>
+		{% endif %}
+	</div>
 </body>
 </html>
