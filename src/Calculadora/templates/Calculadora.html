@@ -27,6 +27,16 @@
 				</select>
 			</div>
 
+			<div class="form-group">
+				<label class="form-label">Periodo DE:</label>
+				<select id="periodo-select" class="form-select" name="periodo">
+					<option value="">--Seleccione--</option>
+					{% for p in periodos %}
+						<option value="{{ p.id }}">{{ p.nombre }} (nper={{ p.nper }})</option>
+					{% endfor %}
+				</select>
+			</div>
+
 			<div id="dynamic-fields" style="display:none">
 				<div class="form-group">
 					<label class="form-label">A:</label>
@@ -37,30 +47,27 @@
 						{% endfor %}
 					</select>
 				</div>
-			</div>
 
 				<div class="form-group">
-					<label class="form-label">Tipo:</label>
-					<select id="tipo-select" class="form-select" name="tipo">
-						<option value="">--Seleccione--</option>
-						{% for t in tipos %}
-							<option value="{{ t.id }}">{{ t.nombre }}</option>
-						{% endfor %}
-					</select>
-				</div>
-
-
-							<div class="form-group">
-					<label class="form-label">Periodo:</label>
-					<select id="periodo-select" class="form-select" name="periodo">
+					<label class="form-label">Periodo A:</label>
+					<select id="periodo-a-select" class="form-select" name="periodo_a">
 						<option value="">--Seleccione--</option>
 						{% for p in periodos %}
 							<option value="{{ p.id }}">{{ p.nombre }} (nper={{ p.nper }})</option>
 						{% endfor %}
 					</select>
 				</div>
-			
+			</div>
 
+			<div class="form-group">
+				<label class="form-label">Tipo:</label>
+				<select id="tipo-select" class="form-select" name="tipo">
+					<option value="">--Seleccione--</option>
+					{% for t in tipos %}
+						<option value="{{ t.id }}">{{ t.nombre }}</option>
+					{% endfor %}
+				</select>
+			</div>
 
 			<div class="form-group actions">
 				<button class="btn" type="submit">Calcular</button>
@@ -73,24 +80,17 @@
 			const calculoSelect = document.getElementById('calculo-select');
 			const dynamic = document.getElementById('dynamic-fields');
 			const periodo = document.getElementById('periodo-select');
+			const periodoA = document.getElementById('periodo-a-select');
 			const tipo = document.getElementById('tipo-select');
 			const transformacion = document.getElementById('transformacion-select');
-
-			function setRequiredPeriodTipo(show){
-				if(show){
-					periodo.setAttribute('required','required');
-					tipo.setAttribute('required','required');
-				}else{
-					periodo.removeAttribute('required');
-					tipo.removeAttribute('required');
-				}
-			}
 
 			function updateVisibility(){
 				if(!calculoSelect.value){
 					dynamic.style.display = 'none';
-					setRequiredPeriodTipo(false);
+					periodo.removeAttribute('required');
+					tipo.removeAttribute('required');
 					transformacion.removeAttribute('required');
+					periodoA.removeAttribute('required');
 					return;
 				}
 
@@ -102,21 +102,39 @@
 					? transformacion.options[transformacion.selectedIndex].text.toLowerCase()
 					: '';
 
-				// Mostrar `Periodo` y `Tipo` siempre que cualquiera de los lados
-				// (cálculo o transformación) incluya 'nominal', o cuando el cálculo
-				// sea 'efectiva' (para permitir convertir efectiva -> nominal)
-				const showPeriodTipo = calcTxt.includes('nominal') || calcTxt.includes('efectiva') || transTxt.includes('nominal');
+				// Mostrar Periodo DE solo cuando DE es Nominal
+				const showPeriodo = calcTxt.includes('nominal');
+
+				// Mostrar Tipo solo cuando ambos lados sean nominal, o cuando DE es efectiva y A es nominal
+				const showTipo = (calcTxt.includes('nominal') && transTxt.includes('nominal')) ||
+				                 (calcTxt.includes('efectiva') && transTxt.includes('nominal'));
+
+				// Mostrar Periodo A solo cuando ambos lados sean nominal
+				const showPeriodoA = calcTxt.includes('nominal') && transTxt.includes('nominal');
 
 				const periodoGroup = periodo.closest('.form-group');
 				const tipoGroup = tipo.closest('.form-group');
-				if(showPeriodTipo){
+
+				if(showPeriodo){
 					periodoGroup.style.display = '';
-					tipoGroup.style.display = '';
-					setRequiredPeriodTipo(true);
+					periodo.setAttribute('required','required');
 				}else{
 					periodoGroup.style.display = 'none';
+					periodo.removeAttribute('required');
+				}
+
+				if(showTipo){
+					tipoGroup.style.display = '';
+					tipo.setAttribute('required','required');
+				}else{
 					tipoGroup.style.display = 'none';
-					setRequiredPeriodTipo(false);
+					tipo.removeAttribute('required');
+				}
+
+				if(showPeriodoA){
+					periodoA.setAttribute('required','required');
+				}else{
+					periodoA.removeAttribute('required');
 				}
 			}
 
@@ -129,6 +147,10 @@
 
 		{% if error %}
 			<p class="error">Error: {{ error }}</p>
+		{% endif %}
+
+		{% if resultIp is not None %}
+			<h2 class="result">Resultado IP: {{ resultIp }}</h2>
 		{% endif %}
 
 		{% if result is not None %}
