@@ -28,19 +28,20 @@ def calculadora(request):
             transformacion = Transformacion.objects.get(id=transformacion_id) if transformacion_id else None
             # Si el cálculo seleccionado es 'efectiva', convertir la tasa efectiva
             # a la tasa por periodo: ((1 + efectiva)^(1/nper)) - 1
-            if calculo and calculo.nombre.lower() == 'efectiva':
-                if transformacion and transformacion.nombre.lower() == 'nominal' and periodo_a:
-                    # Efectiva -> Nominal: necesita Periodo A
-                    nper_a = periodo_a.nper
-                    if porcentaje == 0:
-                        error = 'El porcentaje no puede ser 0.'
-                    else:
-                        efectiva = porcentaje / 100.0
-                        tasa_vencida_periodo_a = (1 + efectiva) ** (1.0 / nper_a) - 1
-                        resultIp = tasa_vencida_periodo_a * 100
-                        result = (tasa_vencida_periodo_a * 100) * nper_a
-                else:
-                    result = None
+            if calculo.nombre.lower() == 'efectiva' and transformacion.nombre.lower() == 'nominal' and periodo_a:
+                nper_a = periodo_a.nper
+                efectiva = porcentaje / 100.0
+
+                tasa_vencida = (1 + efectiva) ** (1.0 / nper_a) - 1
+
+                if tipo and tipo.nombre.lower().startswith('antic'):
+                    tasa = tasa_vencida / (1 + tasa_vencida)
+                else:  # vencida
+                    tasa = tasa_vencida
+
+                resultIp = tasa * 100
+                result = tasa * 100 * nper_a
+            ##
             else:
                 # Conversión nominal vencida -> efectiva
                 if (
@@ -112,6 +113,16 @@ def calculadora(request):
         except Exception as e:
             error = str(e)
 
+    # valores enviados (para conservarlos)
+    form_data = {
+        'porcentaje': request.POST.get('porcentaje', ''),
+        'calculo': request.POST.get('calculo', ''),
+        'periodo': request.POST.get('periodo', ''),
+        'transformacion': request.POST.get('transformacion', ''),
+        'periodo_a': request.POST.get('periodo_a', ''),
+        'tipo': request.POST.get('tipo', ''),
+    }
+
     context = {
         'periodos': periodos,
         'calculos': calculos,
@@ -120,5 +131,6 @@ def calculadora(request):
         'result': result,
         'resultIp': resultIp,
         'error': error,
+        'form_data': form_data
     }
     return render(request, 'Calculadora.html', context)
