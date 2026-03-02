@@ -18,13 +18,15 @@ def calculadora(request):
             periodo_id = request.POST.get('periodo')
             periodo_a_id = request.POST.get('periodo_a')
             calculo_id = request.POST.get('calculo')
-            tipo_id = request.POST.get('tipo')
+            tipo_inicial_id = request.POST.get('tipo_inicial')
+            tipo_final_id = request.POST.get('tipo_final')
             transformacion_id = request.POST.get('transformacion')
 
             periodo = Periodo.objects.get(id=periodo_id) if periodo_id else None
             periodo_a = Periodo.objects.get(id=periodo_a_id) if periodo_a_id else None
             calculo = Calculo.objects.get(id=calculo_id) if calculo_id else None
-            tipo = Tipo.objects.get(id=tipo_id) if tipo_id else None
+            tipo_inicial = Tipo.objects.get(id=tipo_inicial_id) if tipo_inicial_id else None
+            tipo_final = Tipo.objects.get(id=tipo_final_id) if tipo_final_id else None
             transformacion = Transformacion.objects.get(id=transformacion_id) if transformacion_id else None
             # Si el cálculo seleccionado es 'efectiva', convertir la tasa efectiva
             # a la tasa por periodo: ((1 + efectiva)^(1/nper)) - 1
@@ -34,7 +36,7 @@ def calculadora(request):
 
                 tasa_vencida = (1 + efectiva) ** (1.0 / nper_a) - 1
 
-                if tipo and tipo.nombre.lower().startswith('antic'):
+                if tipo_final and tipo_final.nombre.lower().startswith('antic'):
                     tasa = tasa_vencida / (1 + tasa_vencida)
                 else:  # vencida
                     tasa = tasa_vencida
@@ -55,17 +57,24 @@ def calculadora(request):
                     if porcentaje == 0:
                         error = 'El porcentaje no puede ser 0.'
                     else:
-                        result = (((1 + ((porcentaje / 100.0) / nper)) ** nper) - 1) * 100
+                        tasa_periodo = (porcentaje / 100.0) / nper
+
+                        # Si es anticipada convertir a vencida
+                        if tipo_inicial and tipo_inicial.nombre.lower().startswith('antic'):
+                            tasa_periodo = tasa_periodo / (1 - tasa_periodo)
+
+                        result = ((1 + tasa_periodo) ** nper - 1) * 100
                 # Conversión nominal vencida -> nominal anticipada
                 elif (
                     periodo
                     and periodo_a
                     and calculo
-                    and tipo
                     and transformacion
+                    and tipo_final
                     and calculo.nombre.lower() == 'nominal'
                     and transformacion.nombre.lower() == 'nominal'
-                    and tipo.nombre.lower().startswith('antic')
+                    and tipo_final.nombre.lower().startswith('antic')
+                     
                 ):
                     nper = periodo.nper
                     nper_a = periodo_a.nper
@@ -74,6 +83,9 @@ def calculadora(request):
                     else:
                         # Convertir tasa nominal vencida (periodo DE) a tasa por período vencida
                         tasa_vencida_periodo = (porcentaje / 100.0) / nper
+                        if tipo_inicial and tipo_inicial.nombre.lower().startswith('antic'):
+                            tasa_vencida_periodo = tasa_vencida_periodo / (1 - tasa_vencida_periodo)
+
                         # Calcular tasa efectiva anual
                         tasa_efectiva = (1 + tasa_vencida_periodo) ** nper - 1
                         # Convertir tasa efectiva a tasa por período vencida (periodo A)
@@ -88,11 +100,11 @@ def calculadora(request):
                     periodo
                     and periodo_a
                     and calculo
-                    and tipo
+                    and transformacion.nombre.lower() == 'nominal'
                     and transformacion
                     and calculo.nombre.lower() == 'nominal'
                     and transformacion.nombre.lower() == 'nominal'
-                    and tipo.nombre.lower().startswith('venc')
+                    and tipo_final.nombre.lower().startswith('venc')
                 ):
                     nper = periodo.nper
                     nper_a = periodo_a.nper
@@ -101,6 +113,11 @@ def calculadora(request):
                     else:
                         # Convertir tasa nominal vencida (periodo DE) a tasa por período vencida
                         tasa_vencida_periodo = (porcentaje / 100.0) / nper
+                        
+                        #Convertir anticipada inicial a vencida
+                        if tipo_inicial and tipo_inicial.nombre.lower().startswith('antic'):
+                            tasa_vencida_periodo = tasa_vencida_periodo / (1 - tasa_vencida_periodo)
+
                         # Calcular tasa efectiva anual
                         tasa_efectiva = (1 + tasa_vencida_periodo) ** nper - 1
                         # Convertir tasa efectiva a tasa por período vencida (periodo A)
@@ -120,7 +137,8 @@ def calculadora(request):
         'periodo': request.POST.get('periodo', ''),
         'transformacion': request.POST.get('transformacion', ''),
         'periodo_a': request.POST.get('periodo_a', ''),
-        'tipo': request.POST.get('tipo', ''),
+        'tipo_inicial': request.POST.get('tipo_inicial', ''),
+        'tipo_final': request.POST.get('tipo_final', ''),
     }
 
     context = {

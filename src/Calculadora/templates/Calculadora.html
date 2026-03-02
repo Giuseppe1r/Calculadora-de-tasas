@@ -22,28 +22,48 @@
 				<select id="calculo-select" class="form-select" name="calculo" required>
 					<option value="">--Seleccione--</option>
 					{% for c in calculos %}
-						<option value="{{ c.id }}">{{ c.nombre }}</option>
+						<option value="{{ c.id }}" 
+							{% if form_data.calculo == c.id|stringformat:"s" %}selected{% endif %}>
+    						{{ c.nombre }}
+						</option>
 					{% endfor %}
 				</select>
 			</div>
+
 
 			<div class="form-group">
 				<label class="form-label">Periodo DE:</label>
 				<select id="periodo-select" class="form-select" name="periodo">
 					<option value="">--Seleccione--</option>
 					{% for p in periodos %}
-						<option value="{{ p.id }}">{{ p.nombre }} (nper={{ p.nper }})</option>
+						<option value="{{ p.id }}" {% if form_data.periodo == p.id|stringformat:"s" %}selected{% endif %}>
+    						{{ p.nombre }} (nper={{ p.nper }})
+						</option>
 					{% endfor %}
 				</select>
 			</div>
 
+			<div class="form-group">
+    			<label class="form-label">Tipo inicial:</label>
+    			<select id="tipo-inicial-select" class="form-select" name="tipo_inicial">
+        			<option value="">--Seleccione--</option>
+        			{% for t in tipos %}
+            			<option value="{{ t.id }}" {% if form_data.tipo_inicial == t.id|stringformat:"s" %}selected{% endif %}>
+                			{{ t.nombre }}
+            			</option>
+        			{% endfor %}
+    			</select>
+			</div>
+			
 			<div id="dynamic-fields" style="display:none">
 				<div class="form-group">
 					<label class="form-label">A:</label>
 					<select id="transformacion-select" class="form-select" name="transformacion">
 						<option value="">--Seleccione--</option>
 						{% for tr in transformaciones %}
-							<option value="{{ tr.id }}">{{ tr.nombre }}</option>
+							<option value="{{ tr.id }}" {% if form_data.transformacion == tr.id|stringformat:"s" %}selected{% endif %}>
+    							{{ tr.nombre }}
+							</option>
 						{% endfor %}
 					</select>
 				</div>
@@ -53,20 +73,24 @@
 					<select id="periodo-a-select" class="form-select" name="periodo_a">
 						<option value="">--Seleccione--</option>
 						{% for p in periodos %}
-							<option value="{{ p.id }}">{{ p.nombre }} (nper={{ p.nper }})</option>
+							<option value="{{ p.id }}" {% if form_data.periodo_a == p.id|stringformat:"s" %}selected{% endif %}>
+    							{{ p.nombre }} (nper={{ p.nper }})
+							</option>
 						{% endfor %}
 					</select>
 				</div>
 			</div>
 
 			<div class="form-group">
-				<label class="form-label">Tipo:</label>
-				<select id="tipo-select" class="form-select" name="tipo">
-					<option value="">--Seleccione--</option>
-					{% for t in tipos %}
-						<option value="{{ t.id }}">{{ t.nombre }}</option>
-					{% endfor %}
-				</select>
+    			<label class="form-label">Tipo final:</label>
+    				<select id="tipo-final-select" class="form-select" name="tipo_final">
+        				<option value="">--Seleccione--</option>
+        				{% for t in tipos %}
+            			<option value="{{ t.id }}" {% if form_data.tipo_final == t.id|stringformat:"s" %}selected{% endif %}>
+                			{{ t.nombre }}
+            			</option>
+        				{% endfor %}
+    				</select>
 			</div>
 
 			<div class="form-group actions">
@@ -81,24 +105,40 @@
 			const dynamic = document.getElementById('dynamic-fields');
 			const periodo = document.getElementById('periodo-select');
 			const periodoA = document.getElementById('periodo-a-select');
-			const tipo = document.getElementById('tipo-select');
+			const tipoInicial = document.getElementById('tipo-inicial-select');
+			const tipoFinal = document.getElementById('tipo-final-select');
 			const transformacion = document.getElementById('transformacion-select');
 
 			function updateVisibility(){
 				if(!calculoSelect.value){
-					dynamic.style.display = 'none';
-					periodo.removeAttribute('required');
-					tipo.removeAttribute('required');
-					transformacion.removeAttribute('required');
-					periodoA.removeAttribute('required');
-					return;
+    				dynamic.style.display = 'none';
+    				periodo.removeAttribute('required');
+    				transformacion.removeAttribute('required');
+    				periodoA.removeAttribute('required');
+    				return;
 				}
 
 				dynamic.style.display = '';
 				transformacion.setAttribute('required','required');
+				
+				
+				const tipoInicialGroup = tipoInicial.closest('.form-group');
 
 				const calcTxt = calculoSelect.options[calculoSelect.selectedIndex].text.toLowerCase();
-				const transTxt = transformacion.value && transformacion.options[transformacion.selectedIndex]
+
+				//nuveo
+				const showTipoInicial = calcTxt.includes('nominal');
+
+				if(showTipoInicial){
+    				tipoInicialGroup.style.display = '';
+    				tipoInicial.setAttribute('required','required');
+				}else{
+    				tipoInicialGroup.style.display = 'none';
+    				tipoInicial.removeAttribute('required');
+				}
+				//termina nuevo
+				
+ 				const transTxt = transformacion.value && transformacion.options[transformacion.selectedIndex]
 					? transformacion.options[transformacion.selectedIndex].text.toLowerCase()
 					: '';
 
@@ -106,14 +146,13 @@
 				const showPeriodo = calcTxt.includes('nominal');
 
 				// Mostrar Tipo solo cuando ambos lados sean nominal, o cuando DE es efectiva y A es nominal
-				const showTipo = (calcTxt.includes('nominal') && transTxt.includes('nominal')) ||
-				                 (calcTxt.includes('efectiva') && transTxt.includes('nominal'));
+				const showTipo = !!calculoSelect.value;
 
 				// Mostrar Periodo A solo cuando ambos lados sean nominal
 				const showPeriodoA = calcTxt.includes('nominal') && transTxt.includes('nominal');
 
 				const periodoGroup = periodo.closest('.form-group');
-				const tipoGroup = tipo.closest('.form-group');
+				//const tipoGroup = tipo.closest('.form-group');
 
 				if(showPeriodo){
 					periodoGroup.style.display = '';
@@ -123,13 +162,7 @@
 					periodo.removeAttribute('required');
 				}
 
-				if(showTipo){
-					tipoGroup.style.display = '';
-					tipo.setAttribute('required','required');
-				}else{
-					tipoGroup.style.display = 'none';
-					tipo.removeAttribute('required');
-				}
+
 
 				if(showPeriodoA){
 					periodoA.setAttribute('required','required');
